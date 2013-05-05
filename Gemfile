@@ -1,8 +1,8 @@
-source 'https://rubygems.org'
+source :rubygems
 
-gem "json"
-gem "rake"
+gem 'json'
+gem 'rake'
 
 group :test do
-  gem "rspec"
+  gem 'rspec'
 end
