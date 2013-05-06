@@ -1,8 +1,8 @@
 require 'net/https'
 require 'uri'
 require 'json'
-require File.join(File.dirname(__FILE__), 'commit')
-require File.join(File.dirname(__FILE__), 'coverage_change')
+require 'model/commit'
+require 'model/coverage_change'
 
 class JenkinsClient
   def initialize(base_url)
