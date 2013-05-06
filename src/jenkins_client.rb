@@ -26,8 +26,8 @@ class JenkinsClient
     current_coverage = get_json(coverage_info_url(job_name, build_number))
     previous_coverage = get_json(coverage_info_url(job_name, build_number - 1))
 
-    line_change = coverage(current_coverage, 'Lines') - coverage(previous_coverage, 'Lines')
-    conditional_change = coverage(current_coverage, 'Conditionals') - coverage(previous_coverage, 'Conditionals')
+    line_change = coverage_ratio(current_coverage, 'Lines') - coverage_ratio(previous_coverage, 'Lines')
+    conditional_change = coverage_ratio(current_coverage, 'Conditionals') - coverage_ratio(previous_coverage, 'Conditionals')
 
     CoverageChange.new(line_change, conditional_change)
   end
@@ -52,15 +52,15 @@ class JenkinsClient
     "#{jenkins_url(job_name, build_number)}/api/json"
   end
 
-  def coverage_info_url(build_number, job_name)
+  def coverage_info_url(job_name, build_number)
     "#{jenkins_url(job_name, build_number)}/cobertura/api/json?depth=4"
   end
 
   def jenkins_url(job_name, build_number)
-    "#{@base}/#{job_name}/#{build_number}"
+    "#{@base}/job/#{job_name}/#{build_number}"
   end
 
-  def coverage(coverage_data, coverage_item)
+  def coverage_ratio(coverage_data, coverage_item)
     coverage_data['results']['elements'].find { |element| element['name'].eql? coverage_item } ['ratio']
   end
 end
