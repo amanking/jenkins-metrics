@@ -5,7 +5,7 @@ class Commit
   def initialize(params)
     @id = params[:id]
     @message = params[:message]
-    @author = params[:by]
+    @author = params[:author]
     @files = params[:files]
   end
 

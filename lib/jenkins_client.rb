@@ -9,30 +9,20 @@ class JenkinsClient
     @base = base_url
   end
 
-  def commits(job_name, build_number)
-    build_data = get_json(build_info_url(job_name, build_number))
+  def latest_coverage_change(job_name)
+    last_build = get_json(last_build_url(job_name))
+    commits =  commits(last_build)
+    return CoverageChange::EMPTY if commits.empty?
 
-    build_data['changeSet']['items'].map do |item|
-      Commit.new({
-                     :by => item['author']['fullName'],
-                     :message => item['msg'],
-                     :id => item['commitId'],
-                     :files => item['affectedPaths']
-                 })
-    end
-  end
-
-  def coverage(job_name, build_number)
+    build_number = last_build["number"]
     current_coverage = get_json(coverage_info_url(job_name, build_number))
     previous_coverage = get_json(coverage_info_url(job_name, build_number - 1))
 
     line_change = coverage_ratio(current_coverage, 'Lines') - coverage_ratio(previous_coverage, 'Lines')
     conditional_change = coverage_ratio(current_coverage, 'Conditionals') - coverage_ratio(previous_coverage, 'Conditionals')
 
-    CoverageChange.new(line_change, conditional_change)
+    CoverageChange.new(line_change, conditional_change, commits)
   end
-
-  private
 
   def get_json(data_url)
     uri = URI.parse(data_url)
@@ -48,16 +38,29 @@ class JenkinsClient
     JSON.parse(http.request(request).body)
   end
 
-  def build_info_url(job_name, build_number)
-    "#{jenkins_url(job_name, build_number)}/api/json"
+  private
+
+  def commits(build_data)
+    build_data['changeSet']['items'].map do |item|
+      Commit.new({
+                     :author => item['author']['fullName'],
+                     :message => item['msg'],
+                     :id => item['rev'],
+                     :files => item['affectedPaths']
+                 })
+    end
   end
 
   def coverage_info_url(job_name, build_number)
-    "#{jenkins_url(job_name, build_number)}/cobertura/api/json?depth=4"
+    "#{jenkins_url(job_name, build_number)}/cobertura/api/json?depth=2"
   end
 
   def jenkins_url(job_name, build_number)
     "#{@base}/job/#{job_name}/#{build_number}"
+  end
+
+  def last_build_url(job_name)
+    "#{@base}/job/#{job_name}/lastBuild/api/json"
   end
 
   def coverage_ratio(coverage_data, coverage_item)
