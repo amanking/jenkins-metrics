@@ -1,6 +1,5 @@
 class CoverageChange
 
-  @@EMPTY = CoverageChange.new(0, 0)
 
   attr_reader :line, :conditional, :commits
 
@@ -9,4 +8,7 @@ class CoverageChange
     @conditional = conditional_change
     @commits = commits
   end
+
+  @@EMPTY = CoverageChange.new(0, 0)
+
 end
