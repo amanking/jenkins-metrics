@@ -1,6 +1,5 @@
 class CoverageChange
 
-
   attr_reader :line, :conditional, :commits
 
   def initialize(line_change, conditional_change, commits=[])
@@ -9,6 +8,17 @@ class CoverageChange
     @commits = commits
   end
 
-  @@EMPTY = CoverageChange.new(0, 0)
+  def changed?
+    !commits.empty?
+  end
 
+  def to_s
+    <<-STR
+      line : #{@line}
+      conditional : #{@conditional}
+      commits : #{@commits}
+    STR
+  end
+
+  EMPTY = CoverageChange.new(0, 0)
 end
