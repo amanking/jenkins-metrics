@@ -3,28 +3,34 @@ require 'uri'
 require 'json'
 require 'model/commit'
 require 'model/coverage_change'
+require 'model/build_info'
 
 class JenkinsClient
   def initialize(base_url)
     @base = base_url
   end
 
-  def latest_coverage_change(job_name)
+  def latest_build_info(job_name)
     last_build = get_json(last_build_url(job_name))
-    commits =  commits(last_build)
-    return CoverageChange::EMPTY if commits.empty?
 
-    build_number = last_build["number"]
-    current_coverage = get_json(coverage_info_url(job_name, build_number))
-    previous_coverage = get_json(coverage_info_url(job_name, build_number - 1))
+    first_cause = last_build["actions"].first["causes"].first
+    build_number, project_name = first_cause["upstreamBuild"], first_cause["upstreamProject"]
+
+    coverage_change = coverage_change(job_name, last_build["number"])
+    BuildInfo.new(build_number, project_name, commits(last_build), coverage_change)
+  end
+
+  private
+
+  def coverage_change(job_name, coverage_build_number)
+    current_coverage = get_json(coverage_info_url(job_name, coverage_build_number))
+    previous_coverage = get_json(coverage_info_url(job_name, coverage_build_number - 1))
 
     line_change = coverage_ratio(current_coverage, 'Lines') - coverage_ratio(previous_coverage, 'Lines')
     conditional_change = coverage_ratio(current_coverage, 'Conditionals') - coverage_ratio(previous_coverage, 'Conditionals')
 
-    CoverageChange.new(line_change, conditional_change, commits)
+    CoverageChange.new(line_change, conditional_change)
   end
-
-  private
 
   def get_json(data_url)
     uri = URI.parse(data_url)
