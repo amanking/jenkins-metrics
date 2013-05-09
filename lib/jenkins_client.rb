@@ -24,6 +24,8 @@ class JenkinsClient
     CoverageChange.new(line_change, conditional_change, commits)
   end
 
+  private
+
   def get_json(data_url)
     uri = URI.parse(data_url)
     request = Net::HTTP::Get.new(uri.request_uri)
@@ -38,8 +40,6 @@ class JenkinsClient
     JSON.parse(http.request(request).body)
   end
 
-  private
-
   def commits(build_data)
     build_data['changeSet']['items'].map do |item|
       Commit.new({
@@ -52,19 +52,19 @@ class JenkinsClient
   end
 
   def coverage_info_url(job_name, build_number)
-    "#{jenkins_url(job_name, build_number)}/cobertura/api/json?depth=2"
-  end
-
-  def jenkins_url(job_name, build_number)
-    "#{@base}/job/#{job_name}/#{build_number}"
+    "#{job_url(job_name)}/#{build_number}/cobertura/api/json?depth=2"
   end
 
   def last_build_url(job_name)
-    "#{@base}/job/#{job_name}/lastBuild/api/json"
+    "#{job_url(job_name)}/lastBuild/api/json"
+  end
+
+  def job_url(job_name)
+    "#{@base}/job/#{job_name}"
   end
 
   def coverage_ratio(coverage_data, coverage_item)
-    coverage_data['results']['elements'].find { |element| element['name'].eql? coverage_item } ['ratio']
+    coverage_data['results']['elements'].find { |element| element['name'].eql? coverage_item }['ratio']
   end
 end
 
